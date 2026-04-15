@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>现场访问内容</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e6eef7 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .person-tag {
+            transition: all 0.2s ease;
+        }
+
+        .leader-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .member-badge {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        .info-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .upload-area {
+            background: repeating-linear-gradient(
+                45deg,
+                #f8fafc,
+                #f8fafc 10px,
+                #f1f5f9 10px,
+                #f1f5f9 20px
+            );
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: repeating-linear-gradient(
+                45deg,
+                #eff6ff,
+                #eff6ff 10px,
+                #dbeafe 10px,
+                #dbeafe 20px
+            );
+        }
+
+        .rich-text-toolbar {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tool-btn {
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover {
+            background: #e2e8f0;
+            transform: scale(1.05);
+        }
+
+        .tool-btn.active {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .editor-content {
+            min-height: 200px;
+            outline: none;
+        }
+
+        .editor-content:focus {
+            background: #fafafa;
+        }
+
+        .readonly-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        /* 文件项样式 */
+        .file-item {
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .file-item:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* 图片预览 */
+        .image-preview {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* 预览遮罩层 */
+        .preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .preview-overlay.active {
+            display: flex;
+        }
+
+        .preview-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .preview-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .preview-close:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        /* 操作按钮 */
+        .action-btn {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-preview {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .btn-preview:hover {
+            background: #dbeafe;
+            transform: scale(1.05);
+        }
+
+        .btn-download {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .btn-download:hover {
+            background: #dcfce7;
+            transform: scale(1.05);
+        }
+
+        .btn-delete {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+            transform: scale(1.05);
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="min-h-screen py-8 px-4">
+    <!-- 图片预览遮罩层 -->
+    <div id="previewOverlay" class="preview-overlay" onclick="closePreview()">
+        <div class="preview-content" onclick="event.stopPropagation()">
+            <div class="preview-close" onclick="closePreview()">
+                <i class="ri-close-line"></i>
+            </div>
+            <img id="previewImage" class="preview-image" src="" alt="预览">
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto">
+        <!-- 现场访问内容填写 -->
+        <div class="glass-card rounded-xl p-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                    <i class="ri-edit-box-line text-xl text-indigo-600"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold section-header">现场访问内容填写</h2>
+                </div>
+            </div>
+
+            <form class="space-y-6">
+                <!-- 现场访问时间和人员（只读显示） -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
+                    <!-- 时间区间（只读） -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-500 flex items-center gap-2">
+                            <i class="ri-calendar-line text-gray-400"></i>
+                            现场访问时间区间
+                            <span class="text-xs text-gray-400 font-normal">(已确定)</span>
+                        </label>
+                        <div class="flex items-center gap-2 text-gray-800">
+                            <span class="readonly-badge">
+                                <i class="ri-calendar-check-line mr-1 text-gray-500"></i>
+                                2026-04-15
+                            </span>
+                            <span class="text-gray-400">至</span>
+                            <span class="readonly-badge">
+                                <i class="ri-calendar-check-line mr-1 text-gray-500"></i>
+                                2026-04-17
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 现场访问人员（只读） -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-500 flex items-center gap-2">
+                            <i class="ri-team-line text-gray-400"></i>
+                            现场访问人员
+                            <span class="text-xs text-gray-400 font-normal">(已确定)</span>
+                        </label>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="person-tag flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 shadow-sm">
+                                <span class="leader-badge text-white text-xs px-2 py-0.5 rounded-full font-medium">组长</span>
+                                <span class="text-sm font-medium text-gray-700">张三 (ZH001)</span>
+                            </div>
+                            <div class="person-tag flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 shadow-sm">
+                                <span class="member-badge text-white text-xs px-2 py-0.5 rounded-full font-medium">组员</span>
+                                <span class="text-sm font-medium text-gray-700">李四 (LI002)</span>
+                            </div>
+                            <div class="person-tag flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-gray-200 shadow-sm">
+                                <span class="member-badge text-white text-xs px-2 py-0.5 rounded-full font-medium">组员</span>
+                                <span class="text-sm font-medium text-gray-700">王五 (WA003)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 现场访问情况描述（富文本） -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="ri-article-line text-blue-500"></i>
+                        现场访问情况描述
+                    </label>
+                    <div class="border border-gray-300 rounded-lg overflow-hidden bg-white">
+                        <!-- 富文本工具栏 -->
+                        <div class="rich-text-toolbar px-3 py-2 flex items-center gap-1 flex-wrap">
+                            <button type="button" class="tool-btn p-1.5 rounded" title="粗体" onclick="formatDoc('bold')">
+                                <i class="ri-bold text-lg"></i>
+                            </button>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="斜体" onclick="formatDoc('italic')">
+                                <i class="ri-italic text-lg"></i>
+                            </button>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="下划线" onclick="formatDoc('underline')">
+                                <i class="ri-underline text-lg"></i>
+                            </button>
+                            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="无序列表" onclick="formatDoc('insertUnorderedList')">
+                                <i class="ri-list-unordered text-lg"></i>
+                            </button>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="有序列表" onclick="formatDoc('insertOrderedList')">
+                                <i class="ri-list-ordered text-lg"></i>
+                            </button>
+                            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="左对齐" onclick="formatDoc('justifyLeft')">
+                                <i class="ri-align-left text-lg"></i>
+                            </button>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="居中对齐" onclick="formatDoc('justifyCenter')">
+                                <i class="ri-align-center text-lg"></i>
+                            </button>
+                            <button type="button" class="tool-btn p-1.5 rounded" title="右对齐" onclick="formatDoc('justifyRight')">
+                                <i class="ri-align-right text-lg"></i>
+                            </button>
+                        </div>
+                        <!-- 编辑器内容区 -->
+                        <div id="editor" class="editor-content p-4 text-gray-700 leading-relaxed" contenteditable="true" placeholder="请描述与什么人员交流、查阅了什么记录及现场观察了什么，及对需评审内容的相应评审结论...">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500">提示：请详细描述现场访问的具体情况，包括交流人员、查阅记录、现场观察内容等</p>
+                </div>
+
+                <!-- 附件上传 -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <i class="ri-attachment-2 text-blue-500"></i>
+                        附件上传
+                    </label>
+                    <div class="upload-area border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" multiple class="hidden" onchange="handleFileSelect(event)">
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 flex items-center justify-center">
+                            <i class="ri-upload-cloud-2-line text-3xl text-blue-500"></i>
+                        </div>
+                        <p class="text-gray-600 font-medium mb-1">点击或拖拽文件到此处上传</p>
+                        <p class="text-sm text-gray-400">支持 PDF、Word、Excel、图片等格式，单个文件不超过 50MB</p>
+                    </div>
+                    <!-- 已上传文件列表 -->
+                    <div id="fileList" class="space-y-2 mt-4 hidden">
+                        <!-- 动态添加文件项 -->
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 文件存储数组
+        let uploadedFiles = [];
+
+        // 富文本格式化
+        function formatDoc(cmd, value = null) {
+            document.execCommand(cmd, false, value);
+            document.getElementById('editor').focus();
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            const fileList = document.getElementById('fileList');
+            fileList.classList.remove('hidden');
+
+            files.forEach((file, index) => {
+                const fileId = Date.now() + '-' + index;
+                uploadedFiles.push({ id: fileId, file: file });
+
+                const fileItem = createFileElement(file, fileId);
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        // 创建文件元素
+        function createFileElement(file, fileId) {
+            const isImage = file.type.includes('image');
+            const isPdf = file.type.includes('pdf');
+            const isWord = file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx');
+            const isExcel = file.type.includes('excel') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx');
+
+            let iconClass = 'ri-file-line text-gray-500';
+            let bgClass = 'bg-gray-50';
+
+            if (isPdf) { iconClass = 'ri-file-pdf-line text-red-500'; bgClass = 'bg-red-50'; }
+            else if (isWord) { iconClass = 'ri-file-word-line text-blue-500'; bgClass = 'bg-blue-50'; }
+            else if (isExcel) { iconClass = 'ri-file-excel-line text-green-500'; bgClass = 'bg-green-50'; }
+            else if (isImage) { iconClass = 'ri-image-line text-purple-500'; bgClass = 'bg-purple-50'; }
+
+            const div = document.createElement('div');
+            div.className = 'file-item flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm';
+            div.id = 'file-' + fileId;
+
+            // 如果是图片，生成预览图
+            let thumbnailHtml = '';
+            if (isImage) {
+                const imageUrl = URL.createObjectURL(file);
+                thumbnailHtml = `
+                    <img src="${imageUrl}" 
+                         class="image-preview" 
+                         onclick="previewImage('${imageUrl}')"
+                         alt="预览">
+                `;
+            } else {
+                thumbnailHtml = `
+                    <div class="w-12 h-12 ${bgClass} rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i class="${iconClass} text-2xl"></i>
+                    </div>
+                `;
+            }
+
+            // 根据文件类型决定预览按钮是否可用
+            const canPreview = isImage || isPdf;
+            const previewButton = canPreview 
+                ? `<button type="button" class="action-btn btn-preview" onclick="previewFile('${fileId}')">
+                     <i class="ri-eye-line"></i> 预览
+                   </button>`
+                : `<button type="button" class="action-btn btn-preview opacity-50 cursor-not-allowed" disabled title="该类型不支持预览">
+                     <i class="ri-eye-line"></i> 预览
+                   </button>`;
+
+            div.innerHTML = `
+                ${thumbnailHtml}
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-800 truncate" title="${file.name}">${file.name}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${formatFileSize(file.size)} · ${getFileTypeLabel(file)}</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    ${previewButton}
+                    <button type="button" class="action-btn btn-download" onclick="downloadFile('${fileId}')">
+                        <i class="ri-download-line"></i> 下载
+                    </button>
+                    <button type="button" class="action-btn btn-delete" onclick="removeFile('${fileId}')">
+                        <i class="ri-delete-bin-line"></i> 删除
+                    </button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // 获取文件类型标签
+        function getFileTypeLabel(file) {
+            if (file.type.includes('image')) return '图片';
+            if (file.type.includes('pdf')) return 'PDF';
+            if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) return 'Word';
+            if (file.type.includes('excel') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) return 'Excel';
+            return '文件';
+        }
+
+        // 预览图片（大图）
+        function previewImage(url) {
+            document.getElementById('previewImage').src = url;
+            document.getElementById('previewOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭预览
+        function closePreview() {
+            document.getElementById('previewOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 预览文件（通用）
+        function previewFile(fileId) {
+            const fileData = uploadedFiles.find(f => f.id === fileId);
+            if (!fileData) return;
+
+            const file = fileData.file;
+            const url = URL.createObjectURL(file);
+
+            if (file.type.includes('image')) {
+                previewImage(url);
+            } else if (file.type.includes('pdf')) {
+                // PDF在新窗口打开预览
+                window.open(url, '_blank');
+            }
+        }
+
+        // 下载文件
+        function downloadFile(fileId) {
+            const fileData = uploadedFiles.find(f => f.id === fileId);
+            if (!fileData) return;
+
+            const file = fileData.file;
+            const url = URL.createObjectURL(file);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 删除文件
+        function removeFile(fileId) {
+            const element = document.getElementById('file-' + fileId);
+            if (element) {
+                element.style.transform = 'translateX(20px)';
+                element.style.opacity = '0';
+                setTimeout(() => {
+                    element.remove();
+                    uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+
+                    // 如果没有文件了，隐藏列表
+                    if (uploadedFiles.length === 0) {
+                        document.getElementById('fileList').classList.add('hidden');
+                    }
+                }, 300);
+            }
+        }
+
+        // 拖拽上传支持
+        const uploadArea = document.querySelector('.upload-area');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#3b82f6';
+            uploadArea.style.background = '#eff6ff';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#d1d5db';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#d1d5db';
+            uploadArea.style.background = '';
+            const files = e.dataTransfer.files;
+            handleFileSelect({ target: { files: files } });
+        });
+
+        // ESC键关闭预览
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+        });
+    </script>
+</body>
+</html>
